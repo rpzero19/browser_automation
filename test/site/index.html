@@ -1,0 +1,19 @@
+<!doctype html>
+<html>
+  <head><meta charset="utf-8"><title>Test reports</title></head>
+  <body>
+    <h1>Reports</h1>
+    <form action="report.html" method="get">
+      <label>Email <input name="email" type="email"></label>
+      <label>Period
+        <select name="period">
+          <option value="this-month">This month</option>
+          <option value="last-month">Last month</option>
+        </select>
+      </label>
+      <label><input type="checkbox" name="archived"> Include archived</label>
+      <!-- id changes on every visit, like many real sites: must not be relied on -->
+      <button type="submit" id="btn-8f3a2c19d0">Show report</button>
+    </form>
+  </body>
+</html>

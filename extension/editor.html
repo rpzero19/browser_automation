@@ -1,0 +1,67 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>Task · Browser Automation</title>
+    <link rel="stylesheet" href="ui.css" />
+  </head>
+  <body class="page">
+    <main>
+      <h1 id="title">Task</h1>
+      <p id="missing" class="error" hidden>This task no longer exists.</p>
+
+      <div id="form">
+        <section class="card">
+          <label class="field"><span>Name</span><input id="name" /></label>
+          <label class="field"><span>Start page</span><input id="startUrl" /></label>
+          <div class="row">
+            <label>Wait for each element up to <input id="timeoutSec" type="number" min="5" max="600" class="num" /> s</label>
+          </div>
+          <label class="row" style="margin-top: 8px"><input type="checkbox" id="closeTab" /> Close the tab after a successful run</label>
+        </section>
+
+        <section class="card">
+          <h2>Schedule</h2>
+          <div class="row">
+            <select id="schedType">
+              <option value="off">Off</option>
+              <option value="daily">Every day</option>
+              <option value="weekly">On these days</option>
+              <option value="hours">Every few hours</option>
+            </select>
+            <span id="timeWrap">at <input type="time" id="time" /></span>
+            <span id="hoursWrap">every <input type="number" id="every" min="1" max="168" class="num" /> hours</span>
+          </div>
+          <div id="daysWrap" class="days row" style="margin-top: 8px"></div>
+          <p id="nextRun" class="hint"></p>
+          <p class="hint">
+            Runs only while Chrome is open and the computer is awake. A run missed while it was asleep or closed
+            happens once when Chrome starts again. You need to stay signed in to the site.
+          </p>
+        </section>
+
+        <section class="card">
+          <h2>Steps</h2>
+          <p class="hint">Opens the start page in a background tab, then:</p>
+          <ol id="steps" class="steps"></ol>
+          <button id="addWait">+ Add a wait step</button>
+        </section>
+
+        <div class="row">
+          <button id="save" class="primary">Save</button>
+          <button id="run">Save &amp; run now</button>
+          <span id="saved" class="hint"></span>
+          <span class="spacer"></span>
+          <button id="delete" class="danger">Delete task</button>
+        </div>
+
+        <section class="card">
+          <h2>Recent runs</h2>
+          <ul id="runs" class="runs"></ul>
+          <p class="hint">Downloads go to Downloads/Browser Automation/&lt;task name&gt;/. A failed run leaves its tab open.</p>
+        </section>
+      </div>
+    </main>
+    <script type="module" src="editor.js"></script>
+  </body>
+</html>

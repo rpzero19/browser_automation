@@ -1,0 +1,33 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <link rel="stylesheet" href="ui.css" />
+  </head>
+  <body class="popup">
+    <h1>Browser Automation</h1>
+
+    <section id="rec-idle">
+      <p class="hint">Start recording, then do the task once in this tab. Passwords are never recorded.</p>
+      <button id="rec-start" class="rec">● Record on this tab</button>
+      <p id="rec-error" class="hint error"></p>
+    </section>
+
+    <section id="rec-on" hidden>
+      <p><strong class="fail">● Recording</strong> · <span id="rec-count">0</span> steps</p>
+      <ol id="rec-steps" class="steps small"></ol>
+      <input id="rec-name" placeholder="Name this task" />
+      <div class="row">
+        <button id="rec-save" class="primary">Stop &amp; save</button>
+        <button id="rec-cancel">Discard</button>
+      </div>
+      <p id="rec-save-error" class="hint error"></p>
+    </section>
+
+    <h2>Tasks</h2>
+    <ul id="tasks" class="tasks"></ul>
+    <p id="empty" class="hint" hidden>No tasks yet.</p>
+
+    <script type="module" src="popup.js"></script>
+  </body>
+</html>
