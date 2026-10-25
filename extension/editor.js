@@ -23,6 +23,7 @@ function fillForm() {
   $('name').value = task.name;
   $('startUrl').value = task.startUrl;
   $('timeoutSec').value = task.timeoutSec;
+  $('pauseSec').value = task.pauseSec ?? 1;
   $('closeTab').checked = task.closeTab;
   const s = task.schedule || { type: 'off' };
   $('schedType').value = s.type;
@@ -168,10 +169,11 @@ async function save() {
   task.name = $('name').value.trim() || task.name;
   task.startUrl = startUrl;
   task.timeoutSec = Math.min(600, Math.max(5, Number($('timeoutSec').value) || 20));
+  task.pauseSec = Math.min(60, Math.max(0, Number($('pauseSec').value) || 0));
   task.closeTab = $('closeTab').checked;
   task.schedule = readSchedule();
-  const { name, steps, schedule, timeoutSec, closeTab } = task;
-  const res = await send({ type: 'save-task', task: { id, name, startUrl, steps, schedule, timeoutSec, closeTab } });
+  const { name, steps, schedule, timeoutSec, pauseSec, closeTab } = task;
+  const res = await send({ type: 'save-task', task: { id, name, startUrl, steps, schedule, timeoutSec, pauseSec, closeTab } });
   $('saved').textContent = res.error ? res.error : `Saved ${new Date().toLocaleTimeString()}`;
   $('title').textContent = task.name;
   renderSites();

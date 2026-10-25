@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Browser Automation",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "Record browser steps once, replay them, run them on a schedule. Works only on sites you allow. Sends nothing anywhere.",
   "minimum_chrome_version": "116",
   "permissions": ["storage", "alarms", "downloads", "scripting", "notifications", "activeTab"],

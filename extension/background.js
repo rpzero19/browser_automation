@@ -119,6 +119,7 @@ function stopRecording(name) {
       origins: rec.origins, // the only sites a run may touch
       schedule: { type: 'off' },
       timeoutSec: 30,
+      pauseSec: 1,
       closeTab: true,
       runs: [],
       createdAt: Date.now(),
@@ -172,8 +173,10 @@ async function execute(task, reason) {
     tabId = (await chrome.tabs.create({ url: task.startUrl, active: false })).id;
     await waitForLoad(tabId);
     const timeoutMs = (task.timeoutSec || 20) * 1000;
+    const pauseMs = Math.min(60, Math.max(0, Number(task.pauseSec ?? 1))) * 1000; // calmer pace, gentler on slow sites
     for (const [i, step] of task.steps.entries()) {
       try {
+        if (i > 0) await sleep(pauseMs);
         await doStep(tabId, step, timeoutMs, origins);
       } catch (e) {
         throw new Error(`Step ${i + 1} (${describeStep(step)}): ${e.message}`);
@@ -325,7 +328,7 @@ async function saveTask(edit) {
     const tasks = await getTasks();
     const t = tasks[edit.id];
     if (!t) throw new Error('Task not found.');
-    for (const k of ['name', 'startUrl', 'steps', 'schedule', 'timeoutSec', 'closeTab']) if (k in edit) t[k] = edit[k];
+    for (const k of ['name', 'startUrl', 'steps', 'schedule', 'timeoutSec', 'pauseSec', 'closeTab']) if (k in edit) t[k] = edit[k];
     t.origins = taskOrigins(t);
     await chrome.storage.local.set({ tasks });
   });

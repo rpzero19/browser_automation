@@ -28,6 +28,9 @@ Not on the Chrome Web Store yet. To install from this source:
 Runs happen in a background tab. Files go to `Downloads/Browser Automation/<task name>/`.
 You get a notification after each run. A failed run keeps its tab open so you can see where it stopped.
 
+Each run pauses 1 s between steps (change it per task). Untick "Close the tab after a
+successful run" to watch a run happen.
+
 If a step waits for something slow (a report that takes a while to prepare), raise
 "Wait for each element up to … s" on the task page, or add a wait step.
 
