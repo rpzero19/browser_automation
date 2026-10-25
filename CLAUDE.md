@@ -54,4 +54,4 @@ test/
 - Optional later: AI fallback when a step can't find its element.
 
 ## Deploy
-None yet: users load it unpacked. Repo: public `rpzero19/browser_automation` (once the owner confirms). Chrome Web Store later (needs a $5 developer account, the owner's call).
+None yet: users load it unpacked. Repo: public https://github.com/rpzero19/browser_automation (main protected: no force-push/delete; secret scanning + push protection, private vulnerability reporting on). Chrome Web Store later (needs a $5 developer account, the owner's call).
