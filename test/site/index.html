@@ -12,6 +12,9 @@
         </select>
       </label>
       <label><input type="checkbox" name="archived"> Include archived</label>
+      <!-- secrets: must never end up in a recording -->
+      <label>Password <input name="pw" type="password"></label>
+      <label>One-time code <input name="code" autocomplete="one-time-code"></label>
       <!-- id changes on every visit, like many real sites: must not be relied on -->
       <button type="submit" id="btn-8f3a2c19d0">Show report</button>
     </form>

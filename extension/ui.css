@@ -67,3 +67,4 @@ body.page h1 { font-size: 20px; margin-bottom: 12px; }
 #steps li input.num { width: 70px; }
 .runs { list-style: none; padding: 0; margin: 0; }
 .runs li { padding: 6px 0; border-bottom: 1px solid var(--line); }
+.mt { margin-top: 8px; }

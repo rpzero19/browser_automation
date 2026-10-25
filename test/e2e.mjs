@@ -3,17 +3,26 @@
 // Run: npm run e2e
 import { chromium } from 'playwright';
 import http from 'node:http';
-import { readFile, mkdtemp, rm } from 'node:fs/promises';
+import { readFile, writeFile, mkdtemp, rm, cp } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import assert from 'node:assert/strict';
 
 const root = path.resolve(import.meta.dirname, '..');
-const extDir = path.join(root, 'extension');
+// A test copy of the extension that is pre-allowed on 127.0.0.1 only: Playwright can't click
+// Chrome's "allow on this site" prompt. localhost stays NOT allowed, to test the refusal.
+const extDir = await mkdtemp(path.join(tmpdir(), 'ba-ext-'));
+await cp(path.join(root, 'extension'), extDir, { recursive: true });
+const manifest = JSON.parse(await readFile(path.join(extDir, 'manifest.json'), 'utf8'));
+manifest.host_permissions = ['http://127.0.0.1/*'];
+await writeFile(path.join(extDir, 'manifest.json'), JSON.stringify(manifest));
 const csvRequests = [];
 
 const server = http.createServer(async (req, res) => {
   const url = new URL(req.url, 'http://x');
+  if (url.pathname === '/redirect') {
+    return res.writeHead(302, { location: `http://localhost:${server.address().port}/index.html` }).end();
+  }
   if (url.pathname === '/report.csv') {
     csvRequests.push(Object.fromEntries(url.searchParams));
     res.writeHead(200, { 'content-type': 'text/csv', 'content-disposition': 'attachment; filename="report.csv"' });
@@ -52,6 +61,8 @@ try {
   await page.keyboard.press('Tab');
   await page.getByLabel('Period').selectOption({ label: 'Last month' });
   await page.getByLabel('Include archived').check();
+  await page.getByLabel('Password').fill('hunter2-secret');
+  await page.getByLabel('One-time code').fill('424242');
   await page.getByRole('button', { name: 'Show report' }).click();
   await page.waitForURL(/report\.html/);
   await page.waitForSelector('text=● Recording'); // recorder injected again on the new page
@@ -65,8 +76,10 @@ try {
   console.log('  recorded:\n' + task.steps.map((s, i) => `    ${i + 1}. ${describeStep(s)}`).join('\n'));
   assert.deepEqual(task.steps.map((s) => s.type), ['input', 'select', 'check', 'click', 'click']);
   assert.equal(task.steps[1].target.label, 'Period');
+  assert.ok(!JSON.stringify(task).match(/hunter2|424242/), 'secrets must never be recorded');
+  assert.deepEqual(task.origins, [base]);
   assert.ok(!task.steps[3].target.css.some((c) => c.includes('btn-8f3a')), 'generated id must not be used');
-  ok('recording captured 5 steps, no generated ids');
+  ok('recording captured 5 steps, no generated ids, no password or one-time code');
   await page.close();
 
   // ---- replay manually ----
@@ -109,9 +122,40 @@ try {
   assert.match(bad.error, /^Step 4 \(Click "No such button"\): could not find/);
   ok(`broken step reported: ${bad.error}`);
 
+  // ---- a run that lands on another site stops there ----
+  const moved = await sw.evaluate(async ([id, base]) => {
+    const tasks = await ba.getTasks();
+    tasks[id].timeoutSec = 20;
+    tasks[id].startUrl = `${base}/redirect`; // 302 to localhost, which is not one of this task's sites
+    await chrome.storage.local.set({ tasks });
+    return ba.runTask(id, 'test');
+  }, [task.id, base]);
+  assert.ok(!moved.ok);
+  assert.match(moved.error, /^Step 1 .*: the page moved to/);
+  ok(`redirect to another site stopped: ${moved.error}`);
+
+  // ---- refuses sites that aren't allowed, and non-web addresses ----
+  const port = new URL(base).port;
+  await sw.evaluate(async ([id, port]) => {
+    const tasks = await ba.getTasks();
+    tasks[id].startUrl = `http://localhost:${port}/index.html`;
+    tasks[id].origins = [`http://localhost:${port}`];
+    await chrome.storage.local.set({ tasks });
+  }, [task.id, port]);
+  const refused = await sw.evaluate((id) => ba.runTask(id, 'test'), task.id);
+  assert.ok(!refused.ok);
+  assert.match(refused.error, /^Not allowed on http:\/\/localhost:/);
+  ok(`site not allowed: ${refused.error}`);
+  for (const url of ['javascript:alert(1)', 'file:///etc/passwd', 'chrome://settings']) {
+    const err = await sw.evaluate(([id, url]) => ba.saveTask({ id, startUrl: url }).then(() => 'saved', (e) => e.message), [task.id, url]);
+    assert.match(err, /must be an http\(s\) address/, url);
+  }
+  ok('javascript:, file: and chrome: start pages are rejected');
+
   console.log('\nE2E PASSED');
 } finally {
   await ctx.close();
   server.close();
   await rm(profile, { recursive: true, force: true });
+  await rm(extDir, { recursive: true, force: true });
 }

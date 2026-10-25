@@ -56,7 +56,7 @@ export async function playStep(step, timeoutMs) {
   while (!el || (step.type === 'click' && el.disabled)) {
     if (Date.now() > end) {
       const what = t.label ? `"${t.label}"` : 'the element';
-      return { ok: false, error: el ? `${what} stayed disabled` : `could not find ${what} on ${location.href}` };
+      return { ok: false, error: el ? `${what} stayed disabled` : `could not find ${what} on ${location.origin}${location.pathname}` };
     }
     await sleep(250);
     el = find();

@@ -1,10 +1,14 @@
 {
   "manifest_version": 3,
   "name": "Browser Automation",
-  "version": "0.1.0",
-  "description": "Record browser steps once, replay them, run them on a schedule.",
-  "permissions": ["storage", "alarms", "downloads", "tabs", "scripting", "notifications", "webNavigation"],
-  "host_permissions": ["<all_urls>"],
+  "version": "0.2.0",
+  "description": "Record browser steps once, replay them, run them on a schedule. Works only on sites you allow. Sends nothing anywhere.",
+  "minimum_chrome_version": "116",
+  "permissions": ["storage", "alarms", "downloads", "scripting", "notifications", "activeTab"],
+  "optional_host_permissions": ["https://*/*", "http://*/*"],
+  "content_security_policy": {
+    "extension_pages": "default-src 'self'; script-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'; connect-src 'none'"
+  },
   "background": { "service_worker": "background.js", "type": "module" },
   "action": {
     "default_popup": "popup.html",

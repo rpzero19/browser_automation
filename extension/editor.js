@@ -34,6 +34,7 @@ function fillForm() {
     ),
   );
   showSchedule();
+  renderSites();
   renderSteps();
   renderRuns();
 }
@@ -104,6 +105,38 @@ function move(i, d) {
   renderSteps();
 }
 
+function siteOf(url) {
+  try {
+    const u = new URL(url);
+    return /^https?:$/.test(u.protocol) ? u.origin : null;
+  } catch {
+    return null;
+  }
+}
+
+function taskSites() {
+  return [...new Set([siteOf(task.startUrl), ...(task.origins || [])])].filter(Boolean);
+}
+
+async function renderSites() {
+  const rows = await Promise.all(
+    taskSites().map(async (origin) => {
+      const origins = [`${origin}/*`];
+      const ok = await chrome.permissions.contains({ origins });
+      const btn = el('button', { className: 'small', textContent: ok ? 'Remove access' : 'Allow' });
+      btn.onclick = async () => {
+        if (ok) await chrome.permissions.remove({ origins });
+        else await chrome.permissions.request({ origins });
+        renderSites();
+      };
+      return el('li', { className: 'row' },
+        el('span', { className: 'spacer', textContent: origin }),
+        el('span', { className: ok ? 'ok' : 'fail', textContent: ok ? 'Allowed' : 'Not allowed' }), btn);
+    }),
+  );
+  $('sites').replaceChildren(...rows);
+}
+
 function renderRuns() {
   const runs = task.runs || [];
   $('runs').replaceChildren(
@@ -121,15 +154,27 @@ function renderRuns() {
 }
 
 async function save() {
+  const startUrl = $('startUrl').value.trim();
+  const site = siteOf(startUrl);
+  if (!site) {
+    $('saved').textContent = 'The start page must be an http(s) address.';
+    return false;
+  }
+  // a new start site needs Chrome's permission prompt (this click counts as the user's go-ahead)
+  if (!(await chrome.permissions.request({ origins: [`${site}/*`] }))) {
+    $('saved').textContent = `Not saved: ${site} was not allowed.`;
+    return false;
+  }
   task.name = $('name').value.trim() || task.name;
-  task.startUrl = $('startUrl').value.trim();
+  task.startUrl = startUrl;
   task.timeoutSec = Math.min(600, Math.max(5, Number($('timeoutSec').value) || 20));
   task.closeTab = $('closeTab').checked;
   task.schedule = readSchedule();
-  const { name, startUrl, steps, schedule, timeoutSec, closeTab } = task;
+  const { name, steps, schedule, timeoutSec, closeTab } = task;
   const res = await send({ type: 'save-task', task: { id, name, startUrl, steps, schedule, timeoutSec, closeTab } });
   $('saved').textContent = res.error ? res.error : `Saved ${new Date().toLocaleTimeString()}`;
   $('title').textContent = task.name;
+  renderSites();
   return !res.error;
 }
 
@@ -158,6 +203,7 @@ chrome.storage.onChanged.addListener(async (changes, area) => {
   const fresh = changes.tasks.newValue?.[id];
   if (!fresh) return;
   task.runs = fresh.runs;
+  task.origins = fresh.origins;
   renderRuns();
 });
 

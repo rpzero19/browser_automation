@@ -1,6 +1,6 @@
 // Injected into the tab being recorded (again after every page load).
 // Turns the user's clicks, typing and choices into steps and sends them to background.js.
-// Password and file fields are never recorded.
+// Passwords, one-time codes, card numbers and file fields are never recorded.
 (() => {
   if (window.__baRec) return window.__baRec.on();
 
@@ -13,6 +13,8 @@
   let active = true;
   let banner = null;
   const lastValue = new WeakMap();
+  const wasPassword = new WeakSet(); // "show password" toggles turn a password field into a text field
+  const SECRET_NAME = /passw|passcode|pwd|otp|one.?time|verification.?code|cvv|cvc|card.?num|cc-?num|security.?code|secret|token/i;
 
   const norm = (s) => (s || '').replace(/\s+/g, ' ').trim();
   const short = (s) => (s.length > 40 ? s.slice(0, 39) + '…' : s);
@@ -76,7 +78,8 @@
     }
     if (tag === 'a') {
       const h = el.getAttribute('href');
-      if (h && h.length < 120 && !h.startsWith('javascript:')) {
+      // only plain paths: a "?query" can hold tokens, ids or anything a form put there
+      if (h && h.length < 120 && !/[?#]/.test(h) && !h.startsWith('javascript:') && !SECRET_NAME.test(h)) {
         const s = `a[href=${quote(h)}]`;
         if (isUnique(s)) css.push(s);
       }
@@ -95,7 +98,16 @@
     return el;
   }
 
+  function isSecret(el) {
+    if (el.type === 'password' || wasPassword.has(el)) return true;
+    const ac = el.getAttribute('autocomplete') || '';
+    if (/password|one-time-code|cc-/.test(ac)) return true;
+    return [el.name, el.id, el.getAttribute('aria-label'), el.getAttribute('placeholder'), labelText(el.labels?.[0])]
+      .some((v) => v && SECRET_NAME.test(v));
+  }
+
   function recordValue(el) {
+    if (isSecret(el)) return;
     const value = el.isContentEditable ? el.innerText : el.value;
     if (lastValue.get(el) === value) return;
     lastValue.set(el, value);
@@ -168,5 +180,6 @@
   addEventListener('change', onChange, true);
   addEventListener('keydown', onKey, true);
   addEventListener('focusout', onFocusOut, true);
+  addEventListener('focusin', (e) => e.target?.type === 'password' && wasPassword.add(e.target), true);
   showBanner();
 })();

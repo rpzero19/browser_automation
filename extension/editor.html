@@ -17,7 +17,13 @@
           <div class="row">
             <label>Wait for each element up to <input id="timeoutSec" type="number" min="5" max="600" class="num" /> s</label>
           </div>
-          <label class="row" style="margin-top: 8px"><input type="checkbox" id="closeTab" /> Close the tab after a successful run</label>
+          <label class="row mt"><input type="checkbox" id="closeTab" /> Close the tab after a successful run</label>
+        </section>
+
+        <section class="card">
+          <h2>Sites</h2>
+          <p class="hint">A run can only touch these sites, and only while they are allowed.</p>
+          <ul id="sites" class="runs"></ul>
         </section>
 
         <section class="card">
@@ -32,7 +38,7 @@
             <span id="timeWrap">at <input type="time" id="time" /></span>
             <span id="hoursWrap">every <input type="number" id="every" min="1" max="168" class="num" /> hours</span>
           </div>
-          <div id="daysWrap" class="days row" style="margin-top: 8px"></div>
+          <div id="daysWrap" class="days row mt"></div>
           <p id="nextRun" class="hint"></p>
           <p class="hint">
             Runs only while Chrome is open and the computer is awake. A run missed while it was asleep or closed

@@ -17,6 +17,7 @@ async function refresh() {
   $('rec-on').hidden = !rec;
   if (rec) {
     $('rec-count').textContent = rec.steps.length;
+    $('rec-blocked').hidden = !rec.blocked;
     $('rec-steps').start = Math.max(1, rec.steps.length - 4);
     $('rec-steps').replaceChildren(...rec.steps.slice(-5).map((s) => el('li', { textContent: describeStep(s) })));
     if (!nameFilled) {
@@ -49,12 +50,34 @@ async function refresh() {
   );
 }
 
+// The current tab and its site as a permission pattern (origin + "/*"), or null.
+async function currentSite() {
+  const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+  try {
+    const u = new URL(tab?.url || '');
+    return { tab, pattern: /^https?:$/.test(u.protocol) ? `${u.origin}/*` : null };
+  } catch {
+    return { tab, pattern: null };
+  }
+}
+
 $('rec-start').onclick = async () => {
   $('rec-error').textContent = '';
-  const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+  const { tab, pattern } = await currentSite();
+  if (!pattern) return ($('rec-error').textContent = 'Open a normal web page (http or https) first.');
+  // Chrome shows its own "allow on this site" prompt; the extension can't touch any site without it.
+  if (!(await chrome.permissions.request({ origins: [pattern] }))) {
+    return ($('rec-error').textContent = 'Not allowed on this site, so nothing was started.');
+  }
   const res = await send({ type: 'rec-start', tabId: tab.id });
   if (res.error) $('rec-error').textContent = res.error;
   else window.close(); // get out of the way so the page can be used
+};
+
+$('rec-allow').onclick = async () => {
+  const { pattern } = await currentSite();
+  if (pattern && (await chrome.permissions.request({ origins: [pattern] }))) await send({ type: 'rec-reinject' });
+  refresh();
 };
 
 $('rec-save').onclick = async () => {

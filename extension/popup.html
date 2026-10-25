@@ -8,13 +8,17 @@
     <h1>Browser Automation</h1>
 
     <section id="rec-idle">
-      <p class="hint">Start recording, then do the task once in this tab. Passwords are never recorded.</p>
+      <p class="hint">Start recording, then do the task once in this tab. Chrome asks you to allow this site first. Passwords are never recorded.</p>
       <button id="rec-start" class="rec">● Record on this tab</button>
       <p id="rec-error" class="hint error"></p>
     </section>
 
     <section id="rec-on" hidden>
       <p><strong class="fail">● Recording</strong> · <span id="rec-count">0</span> steps</p>
+      <div id="rec-blocked" hidden>
+        <p class="hint error">This page is on a site the extension isn't allowed on, so nothing here is recorded.</p>
+        <button id="rec-allow">Allow this site</button>
+      </div>
       <ol id="rec-steps" class="steps small"></ol>
       <input id="rec-name" placeholder="Name this task" />
       <div class="row">
